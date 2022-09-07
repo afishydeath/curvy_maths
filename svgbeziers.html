@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>svg bezier</title>
+</head>
+<body onload="load()">
+	<svg width="1024" height="512" id="svg-drawing" onclick="clickEvent()">
+		<rect x=0 y=0 width="1024" height="512" id="canvas" style="fill:white;stroke-width:3;stroke:black;" />
+
+	</svg><br>
+	<div class="modes">
+		<input type="range" id="tSlider" name="tSlider" min=0 max=60 oninput="draw()">
+		<label for="tSlider" id="tSliderLabel">t</label>
+		<input type="checkbox" id="dMode" name="dMode" oninput="dumb()">
+		<label for="dMode">Dumbass mode</label>
+		<input type="checkbox" id="cMode" name="cMode" oninput="chaos()">
+		<label for="dMode">Chaos mode</label>
+	</div>
+	<div class="pointInput">
+		x:<input type="text" id="addX"name="addX" style="width: 100px;">
+		y:<input type="text" id="addY"name="addY" style="width: 100px;">
+	</div>
+	<div id="buttons" style="inline">
+		<button id="addPoint" onclick="addPoint(document.getElementById('addX').value,document.getElementById('addY').value)">Add</button>
+		<button id="draw" onclick="draw()">Draw frame</button>
+		<button id="reset" onclick="reset()">Reset</button>
+		<button id="animate" onclick="run()">Animate</button>
+		<button id="animate" onclick="stop()">Stop</button>
+	</div>
+</body>
+<script type="text/javascript">
+	let start=[[450, 450.0], [525.0, 450.0], [525.0, 375.0], [375.0, 375.0], [375.0, 525.0], [600.0, 525.0], [600.0, 300.0], [300.0, 300.0], [300.0, 600.0], [675.0, 600.0], [675.0, 225.0], [225.0, 225.0], [225.0, 675.0], [750.0, 675.0], [750.0, 150.0]].reverse();
+	let points=[]
+	let newPoint=[];
+	let prevPoint=[];
+	let t=0.5;
+	let running=false;
+	let hueChange=2;
+	let fRate=1000/12
+	let d=false
+	let c=false
+	let chaosOld={}
+	let chaosNew={}
+
+	function addStarting(){
+		let starter = setInterval(function(){
+				if (start==0){
+					clearInterval(starter);
+				}else{
+					let now=start.pop()
+					addPoint(now[0],now[1])
+				}
+			}, 1)
+	}
+
+	function load(){
+		document.getElementById("svg-drawing").style.width=screen.width-60
+		document.getElementById("svg-drawing").style.height=screen.height-200
+		document.getElementById("canvas").style.width=screen.width-60
+		document.getElementById("canvas").style.height=screen.height-200
+		console.log(screen.width-60,screen.height-200)
+		addStarting()
+	}
+
+	function chaos(){
+		if (c){c=false}else{c=true}
+		// console.log(c)
+	}
+
+	function dumb(){
+		if (d){d=false}else{d=true}
+		if (d){
+			document.getElementById('tSlider').max=1200;
+			fRate=1
+		}else{
+			document.getElementById('tSlider').max=60;
+			fRate=1000/30
+		}
+	}
+
+
+	function removeElementsByClass(className){
+		const elements = document.getElementsByClassName(className);
+		while(elements.length > 0){
+			elements[0].parentNode.removeChild(elements[0]);
+		}
+	}
+
+	function appendSVGChild(elementType,target,attributes = {},text = '') {
+		const element = document.createElementNS('http://www.w3.org/2000/svg',elementType);
+		Object.entries(attributes).map(a => element.setAttribute(a[0],a[1]));
+		if (text) {
+			const textNode = document.createTextNode(text);
+			element.appendChild(textNode);
+		}
+		target.appendChild(element);
+		return element;
+	};
+
+	function clear(){
+		removeElementsByClass('drawn');
+		removeElementsByClass('curve');
+		removeElementsByClass('chaos');
+	}
+
+	function point(cx,cy,color='rgb(0,0,0)',cls='base'){
+		appendSVGChild('circle',document.getElementById('svg-drawing'),attributes={'cx':cx,'cy':cy,'r':3,'fill':color,'class':cls});
+	}
+
+	function line(x0,y0,x1,y1,color='rgb(0,0,0)',cls='base'){
+		appendSVGChild('line',document.getElementById('svg-drawing'),attributes={'x1':x0,'y1':y0,'x2':x1,'y2':y1,'style':'stroke:'+color+';stroke-width:2;','class':cls});
+	}
+
+	function doLines(points,t){
+		// console.log(points);
+		if (running){
+			prevPoint=newPoint
+			if (c){
+				chaosNew[String(points.length)]=points
+			}
+		}
+		if (points.length>1){
+			let newPoints=[];
+			let c='hsl('+(points.length-2)*hueChange+',100%,50%)';
+			// console.log(c);
+			for (let i=0;i<points.length-1;i++){
+				let nx=points[i][0]+((points[i+1][0]-points[i][0])*t);
+				let ny=points[i][1]+((points[i+1][1]-points[i][1])*t);
+				// console.log(nx,ny);
+				newPoints.push([nx,ny]);
+				point(nx,ny,color=c,cls='drawn');
+				let l = newPoints.length;
+				if (l>1){
+					line(newPoints[l-2][0],newPoints[l-2][1],newPoints[l-1][0],newPoints[l-1][1],color=c,cls='drawn');
+				}
+			}
+			doLines(newPoints,t);
+		}else{
+			// console.log(points[0]);
+			if (running){
+				newPoint=points[0]
+
+			}
+		}
+	}
+
+	function addPoint(x,y){
+		points.push([x,y]);
+		point(x,y);
+		let l = points.length;
+		if (l>1){
+			line(points[l-2][0],points[l-2][1],points[l-1][0],points[l-1][1]);
+		}
+	}
+
+	function clickEvent(){
+		clear();
+		// console.log('click');
+		let x = event.clientX-8;
+		let y = event.clientY-8;
+		// console.log(x,y);
+		addPoint(x,y)
+	}
+
+	function chaosDraw(chaosOld,chaosNew){
+		// console.log(chaosOld.length)
+		for (let key in chaosOld){
+			// console.log(key)
+			for (let l=0;l<chaosOld[key].length;l++){
+				let c='hsl('+(chaosOld[key].length-1)*hueChange+',100%,50%)';
+				// console.log(c)
+				line(chaosOld[key][l][0],chaosOld[key][l][1],chaosNew[key][l][0],chaosNew[key][l][1],color=c,cls='chaos')
+			}
+		}
+	}
+
+	function draw(){
+		removeElementsByClass('drawn');
+		t=document.getElementById('tSlider').value;
+		m=document.getElementById('tSlider').max;
+		doLines(points,t/m);
+		if (prevPoint[0]){
+			line(prevPoint[0],prevPoint[1],newPoint[0],newPoint[1],color='hsl(0,100%,50%)',cls='curve');
+			point(newPoint[0],newPoint[1],color='hsl(0,100%,60%)',cls='curve')
+		}
+		if (c){
+			if (chaosOld[1]){
+				chaosDraw(chaosOld,chaosNew)
+			}
+			chaosOld=chaosNew
+			chaosNew={}
+		}
+		document.getElementById("tSliderLabel").innerHTML=Math.round(Number(document.getElementById("tSlider").value)/Number(document.getElementById('tSlider').max)*100)+'%'
+		// console.log(chaosOld!={})
+
+	}
+
+	function reset(){
+		clear();
+		removeElementsByClass('base');
+		points=[];
+	}
+
+	function run(){
+		if (!running){
+			running=true;
+			hueChange=360/points.length
+			document.getElementById('tSlider').value=0;
+			clear();
+			draw();
+			let timer = setInterval(function(){
+				document.getElementById('tSlider').value++;
+				draw();
+				if (document.getElementById('tSlider').value==document.getElementById('tSlider').max){
+					clearInterval(timer);
+					running=false;
+					removeElementsByClass('drawn');
+					prevPoint=[];
+					newPoint=[];
+					chaosOld={}
+					chaosNew={}
+				}
+			}, fRate)
+		}
+	}
+
+	function stop(){
+		document.getElementById('tSlider').value=document.getElementById('tSlider').max
+		running=false;
+		clear()
+	}
+
+</script>
+<style>
+	div{
+		margin: 10px;
+	}
+	div,button{
+		margin-left: 10px;
+		margin-right: 10px;
+	}
+</style>
+
+</html>
