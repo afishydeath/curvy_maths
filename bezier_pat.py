@@ -24,7 +24,7 @@ def diamond(w,h,iters):
 	out=[[w-(i//4*(w/iters)),0] if (i+1)%4==0 else([w,h-(i//4*(h/iters))] if (i+1)%3==0 else ([i//4*(w/iters),h] if (i+1)%2==0 else [0,i//4*(h/iters)])) for i in range(iters*4)]
 	return out
 
-def spiral(iters,size=100):
+def spiral(iters,size):
 	if iters==0:
 		return [0,0]
 	out = [[sum([(-1 if j%4==3 else 1)*math.ceil(j/2)*size/((iters-2)//4+1) for j in range(1,i+1,2)]),sum([(-1 if j%4==2 else 1)*math.ceil(j/2)*size/((iters-2)//4+1) for j in range(0,i+1,2)])] for i in range(iters)]

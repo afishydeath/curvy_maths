@@ -37,5 +37,5 @@ def convert(size=1000,name='frame'):
 		os.chdir('./png_frames')
 		os.system(f'convert -delay 10 -loop 1 $(ls -1 | sort -n -t\'e\' -k2) ../gifs/anim{gifn}.gif')
 		os.chdir('..')
-if __name__ == '__main__':
-	convert()
+# if __name__ == '__main__':
+	# convert()
