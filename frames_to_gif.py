@@ -1,5 +1,5 @@
 # convert frames to gif
-import sys,os,subprocess
+import sys,os,subprocess,time
 
 def progress_bar(current,maximum,size=100):
 	progress=int(current/maximum*size)
@@ -15,8 +15,9 @@ def progress_bar(current,maximum,size=100):
 def number_component(x):
 	return int(x.split('e')[1].split('.')[0])
 
-def convert(size=1000,name='frame'):
+def convert(size=1000,delay=10,name='frame'):
 	if sys.platform.startswith('linux'):
+		start=time.time()
 		maximum=len(os.listdir('svg_frames'))-1
 		path_lis=sorted(os.listdir('svg_frames'),key=number_component)
 		os.system('rm ./png_frames/*')
@@ -35,7 +36,9 @@ def convert(size=1000,name='frame'):
 		print('Making gif')
 		gifn=len(os.listdir('gifs'))
 		os.chdir('./png_frames')
-		os.system(f'convert -delay 10 -loop 1 $(ls -1 | sort -n -t\'e\' -k2) ../gifs/anim{gifn}.gif')
+		os.system(f'convert -delay {delay} -loop 1 $(ls -1 | sort -n -t\'e\' -k2) ../gifs/anim{gifn}.gif')
 		os.chdir('..')
+		end=time.time()
+		print(f'Took {end-start} seconds')
 # if __name__ == '__main__':
 	# convert()
